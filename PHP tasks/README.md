@@ -92,7 +92,7 @@ This project demonstrates several web programming assignments focusing on PHP, H
 - `/task3_string_date_array.php` – Demonstrations of string, date, and array functions.
 - `/task4_tours_management.php` – Full school tours management system.
 - `/db/` – SQL scripts for database schema and sample data.
-- `/assets/` – CSS stylesheets and resources.
+
 
 ---
 
