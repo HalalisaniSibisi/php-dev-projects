@@ -104,7 +104,7 @@ Contributions or suggestions are welcome through pull requests or issues.
 
 ## Contact
 
-For questions or feedback, contact [Your Name] at [your.email@example.com].
+For questions or feedback, contact [Naluthabo Sibisi] at [sibisihalalisani203@gmail.com].
 
 ---
 
