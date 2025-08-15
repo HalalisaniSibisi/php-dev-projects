@@ -1,0 +1,95 @@
+//PHP Code for 2(a):
+<?php
+if (isset($_GET['submit_a'])) {
+    $num = intval($_GET['number']);
+
+    if ($num <= 0) {
+        echo "<p style='color: orangered; text-align: center;'>Please enter a positive number greater than zero.</p>";
+    }else {
+
+        $numbers = [];
+
+        $sum = 0;
+        for ($i = 1; $i <= $num; $i++) {
+            $numbers[] = $i;
+            $sum += $i;
+
+        }
+
+        $ave = $sum / $num;
+    }
+
+    echo "<p style='text-align:center;'><strong>Numbers:</strong> " . implode(", ", $numbers) . " ($num numbers)</p>";
+    echo "<p style='text-align:center;'><strong>Sum:</strong> $sum</p>";
+    echo "<p style='text-align:center;'><strong>Average</strong> " . number_format($ave, 2) . "</p>";
+
+}
+
+?>
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//PHP Code for 2(b) located HERE!
+<?php
+
+//Function to calculate the final mark
+    function calculateFinalMark($examMark, $yearMark) {
+        $finalMark = ($examMark < 40) ? $examMark : (0.75 * $examMark + 0.25 * $yearMark);
+        echo "<p style='text-align:center;'>Exam Mark: $finalMark, Year Mark: $yearMark - Final Mark: " . number_format($finalMark, 2) . "</p>";
+    }
+
+    echo "<h3 style='text-align: center; color: darkcyan'>Final Mark Calculations</h3>";
+    calculateFinalMark(35, 50);
+    calculateFinalMark(40, 55);
+    calculateFinalMark(55, 60);
+
+    ?>
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//PHP CODE FOR 2(C) LOCATED HERE!
+<?php
+
+if (isset($_GET['submit_c'])) {
+    $country = $_GET['country'];
+
+    echo "<p style='text-align: center; font-weight: 400; font-size: 1.5rem; background-color: cornflowerblue; padding: 2rem; color: white;' >";
+
+    switch ($country) {
+        case "Angola":
+            echo "Capital of Angola is Luanda";
+            break;
+        case "Botswana":
+            echo "Capital of Botswana is Gaborone";
+            break;
+        case "Democratic Republic of Congo":
+            echo "Capital of Democratic Republic is Kinshasa";
+            break;
+        case "Eswatini":
+            echo "Capital of Eswatini is Mbabane";
+            break;
+        case "Mauritius":
+            echo "Capital of Mauritius is Port Louis";
+            break;
+        case "Namibia":
+            echo "Capital of Namibia is Windhoek";
+            break;
+        case "South Africa":
+            echo "Capital of South Africa is Bloemfontein";
+            break;
+        case "Tanzania":
+            echo "Capital of Tanzania is Dodoma";
+            break;
+        case "Zambia":
+            echo "Capital of Zambia is Lusaka";
+            break;
+        case "Zimbabwe":
+            echo "Capital of Zimbabwe is Harare";
+            break;
+    }
+
+    echo "</p>";
+}
+
+
+
+?>

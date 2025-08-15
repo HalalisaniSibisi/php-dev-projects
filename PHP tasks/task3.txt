@@ -1,0 +1,105 @@
+// CODE FOR TASK 3(a) LOCATED HERE
+<?php
+
+// 1. strrev() function - This function is used when you want to reverse a string.
+$word = "Functionalities";
+echo "<p><strong>strrev():</strong> The reverse word for the <span style='color: orangered'>$word</span> is '<span style='color: red; font-weight: bold'>" . strrev($word) . "</span>'.</p> <br>";
+
+
+//2.strlen() function -  This function returns the length of the string
+$sentence = "I want to wake up tomorrow and code with php";
+echo "<p><strong>strlen():</strong> The length of the <span style='color: green'>$sentence</span>is '<span style='color: green; font-weight: bold'>" . strlen($sentence) . "</span>'.</p> <br>";
+
+//3. strtolower() function - this converts any string to lowercase.
+$loud = "THABO, GRANDMOTHER SAYS YOU SHOULD BE BACK HOME BY 4PM!!!";
+echo "<p><strong>strtolower():</strong> <span style='color: mediumpurple'>' $loud '</span> becomes <span style='font-weight: bold; color: darkmagenta'>" . strtolower($loud) . "</span></p> <br>";
+
+//4. explode() - The explode function is used to split a string into an array by a delimiter.
+$languages = "CSS HTML PHP Java JavaScript";
+$languagesArray = explode(" ", $languages);
+echo "<p><strong>explode: </strong> This splits <span style='color: darkslategrey; border: 1px solid black;'>$languages</span> by a commas, resulting in: ";
+echo implode(" | ", $languagesArray);
+echo "</p> <br>";
+
+//5. str_repeat() function - This function used to repeat a string multiple times, which depends on how many times you want to repeat it;
+$password = "01234_Apple";
+echo  "<p><strong>str_repeat():</strong> This is the repeated <span style='color: darkmagenta'>$password</span> when repeated 4 times: <span style='color: mediumpurple'> " . str_repeat($password, 4) . "</span</p><br>";
+
+?>
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//TASK 3(b) PHP CODE IS LOCATED BELOW:
+<?php
+
+$current = new DateTime();
+
+//The code displays the week number, week, day, month, year
+echo "<p>Week number of the year: <span style='color: red'> ". $current->format('W') . " </span></p> <br>";
+echo "<p>The day of the week: <span style='color: red'> ". $current->format('l') . "</span></p> <br>";
+echo "<p>The current month: <span style='color: red'> ". $current->format('F') . "</span></p> <br>";
+echo "<p>The current year: <span style='color: red'> ". $current->format('Y') . "</span></p> <br>";
+
+$date_till_Christmas = new DateTime("25-12-2025");
+$interval = $date_till_Christmas->diff($current);
+echo "<p> The days left till Christmas: <span style='color: red'> ". $interval->days . " days.</span></p> <br>";
+
+
+
+?>
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//TASK 3(c) PHP CODE LOCATED HERE:
+<?php
+
+$countries = [
+        "South Africa", "Botswana", "Angola", "Democratic Republic of Congo", "Zambia", "Zimbabwe", "Namibia", "Tanzania", "Eswatini", "Mauritius"
+];
+
+echo "<p style='font-size: 1.3rem'><strong>countries:</strong> ";
+foreach ($countries as $country) {
+    echo "<span style='color: magenta; font-size: 1.2rem;'> " . $country . "</span> <br> ";
+
+}
+
+//To sort in reverse order, the list we use the rsort()function
+rsort($countries);
+
+echo "<p style='font-size: 1.3rem'><strong>countries:</strong> ";
+foreach ($countries as $country) {
+    echo "<span style='color: magenta; font-size: 1.2rem;'> " . $country . "</span> <br> ";
+}
+
+?>
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//TASK 3(d) PHP CODE LOCATED HERE:
+<?php
+
+if (isset($_GET['submit_d'])) {
+    $country = $_GET['country'];
+
+    $capitalCities = [
+            "Angola" => "Luanda",
+            "Botswana" => "Gaborone",
+            "Democratic Republic of Congo" => "Kinshasa",
+            "Eswatini" => "Mbabane",
+            "Mauritius" => "Port Louis",
+            "Namibia" => "Windhoek",
+            "South Africa" => "Bloemfontein",
+            "Tanzania" => "Dodoma",
+            "Zambia" => "Lusaka",
+            "Zimbabwe" => "Harare"
+    ];
+
+    if (array_key_exists($country, $capitalCities)) {
+        echo "<p style='text-align: center; font-weight: 400; font-size: 1.5rem; background-color: darkolivegreen; padding: 2rem; color: white;'>The Capital of $country is ". $capitalCities[$country] . "</p> <br>";
+    }else {
+        echo "<p>Please select a valid country</p> <br>";
+    }
+
+
+}
+
+
+?>

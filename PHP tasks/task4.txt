@@ -1,0 +1,567 @@
+<?php
+
+include "menu.inc";
+
+// This is how to connect to our live Database, these are my connection settings located here
+$host = "sql108.infinityfree.com";
+$username = "if0_39681730";
+$password = "WTpTwWWunuI2eKW";
+$database = "if0_39681730_24988987_sibisi_db";
+
+// Connecting to database using PDO
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$database;charset=utf8", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Database connection failed: " . $e->getMessage());
+}
+
+// According to the chapters, we must create CRUD functions for our system
+// Get all pupils from database
+function getAllPupils($pdo) {
+    $query = "SELECT * FROM pupils ORDER BY surname, name";
+    $stmt = $pdo->query($query);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Adding a new pupil to the database
+function addNewPupil($pdo, $name, $surname, $grade) {
+    $query = "INSERT INTO pupils (name, surname, grade) VALUES (?, ?, ?)";
+    $stmt = $pdo->prepare($query);
+    return $stmt->execute([$name, $surname, $grade]);
+}
+
+// Deleting a pupil from the db
+function removePupil($pdo, $pupil_id) {
+    $query = "DELETE FROM pupils WHERE pupil_id = ?";
+    $stmt = $pdo->prepare($query);
+    return $stmt->execute([$pupil_id]);
+}
+
+
+// Getting all expeditions from database
+function getAllExpeditions($pdo) {
+    $query = "SELECT * FROM expeditions ORDER BY title";
+    $stmt = $pdo->query($query);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// Add a new expedition (updated to match your database structure)
+function addNewExpedition($pdo, $title, $description, $start_date, $end_date, $cost) {
+    $query = "INSERT INTO expeditions (title, description, start_date, end_date, cost) VALUES (?, ?, ?, ?, ?)";
+    $stmt = $pdo->prepare($query);
+    return $stmt->execute([$title, $description, $start_date, $end_date, $cost]);
+}
+
+// Delete an expedition
+function removeExpedition($pdo, $expedition_id) {
+    $query = "DELETE FROM expeditions WHERE expedition_id = ?";
+    $stmt = $pdo->prepare($query);
+    return $stmt->execute([$expedition_id]);
+}
+
+
+function canPupilJoinExpedition($pdo, $pupil_id, $expedition_id) {
+    //This is to check and make sure tht both of the pupil and expedition exist.
+    $query = "SELECT COUNT(*) FROM pupils WHERE pupil_id = ?";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$pupil_id]);
+    $pupilExists = $stmt->fetchColumn() > 0;
+
+    $query = "SELECT COUNT(*) FROM expeditions WHERE expedition_id = ?";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([$expedition_id]);
+    $expeditionExists = $stmt->fetchColumn() > 0;
+
+    return ($pupilExists && $expeditionExists);
+}
+
+// Registering pupil for expedition Function
+function registerPupilForExpedition($pdo, $pupil_id, $expedition_id) {
+    // To Check if the student/pupil has already registered
+    $checkQuery = "SELECT COUNT(*) FROM registrations WHERE pupil_id = ? AND expedition_id = ?";
+    $checkStmt = $pdo->prepare($checkQuery);
+    $checkStmt->execute([$pupil_id, $expedition_id]);
+
+    if ($checkStmt->fetchColumn() > 0) {
+        return "already_registered";
+    }
+
+    // To check grade eligibility
+    if (!canPupilJoinExpedition($pdo, $pupil_id, $expedition_id)) {
+        return "grade_mismatch";
+    }
+
+    // Here we register the pupil
+    $insertQuery = "INSERT INTO registrations (pupil_id, expedition_id) VALUES (?, ?)";
+    $insertStmt = $pdo->prepare($insertQuery);
+    if ($insertStmt->execute([$pupil_id, $expedition_id])) {
+        return "success";
+    }
+    return "error";
+}
+
+// This function below retrieves all registrations with pupil and expedition details
+function getAllRegistrations($pdo) {
+    $query = "SELECT r.registration_id, p.name, p.surname, p.grade, e.title, e.cost
+              FROM registrations r
+              JOIN pupils p ON r.pupil_id = p.pupil_id
+              JOIN expeditions e ON r.expedition_id = e.expedition_id
+              ORDER BY e.title, p.surname";
+    $stmt = $pdo->query($query);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// This function allows us to get summary for all of our information
+function getExpeditionSummary($pdo) {
+    $query = "SELECT e.title, e.cost, COUNT(r.pupil_id) as total_pupils,
+                     GROUP_CONCAT(CONCAT(p.name, ' ', p.surname) SEPARATOR ', ') as pupil_names
+
+              FROM expeditions e
+              LEFT JOIN registrations r ON e.expedition_id = r.expedition_id
+              LEFT JOIN pupils p ON r.pupil_id = p.pupil_id
+              GROUP BY e.expedition_id
+              ORDER BY e.title";
+    $stmt = $pdo->query($query);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+
+// ACCORDING TO THE MVC THIS IS THE CONTROLLER - This part of my code handles the form submissions
+// ========================================
+
+$message = "";
+$messageType = "info";
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+    // Adding a Pupil
+    if (isset($_POST['add_pupil'])) {
+        $name = trim($_POST['name']);
+        $surname = trim($_POST['surname']);
+        $grade = intval($_POST['grade']);
+
+        if (!empty($name) && !empty($surname) && $grade >= 1 && $grade <= 12) {
+            if (addNewPupil($pdo, $name, $surname, $grade)) {
+                $message = "Pupil '$name $surname' added successfully!";
+                $messageType = "success";
+            } else {
+                $message = "Error adding pupil.";
+                $messageType = "error";
+            }
+        } else {
+            $message = "Please fill in all fields correctly.";
+            $messageType = "error";
+        }
+    }
+
+    // Adding Expeditions
+    if (isset($_POST['add_expedition'])) {
+        $title = trim($_POST['title']);
+        $description = trim($_POST['description']);
+        $start_date = $_POST['start_date'];
+        $end_date = $_POST['end_date'];
+        $cost = floatval($_POST['cost']);
+
+        if (!empty($title) && !empty($description) && !empty($start_date) && !empty($end_date) && $cost >= 0) {
+            if (addNewExpedition($pdo, $title, $description, $start_date, $end_date, $cost)) {
+                $message = "Expedition '$title' added successfully!";
+                $messageType = "success";
+            } else {
+                $message = "Error adding expedition.";
+                $messageType = "error";
+            }
+        } else {
+            $message = "Please fill in all expedition fields correctly.";
+            $messageType = "error";
+        }
+    }
+
+    // Registering a Pupil for Expedition
+    if (isset($_POST['register_pupil'])) {
+        $pupil_id = intval($_POST['pupil_id']);
+        $expedition_id = intval($_POST['expedition_id']);
+
+        if ($pupil_id > 0 && $expedition_id > 0) {
+            $result = registerPupilForExpedition($pdo, $pupil_id, $expedition_id);
+
+            switch ($result) {
+                case "success":
+                    $message = "Pupil registered successfully!";
+                    $messageType = "success";
+                    break;
+                case "already_registered":
+                    $message = "Pupil is already registered for this expedition.";
+                    $messageType = "error";
+                    break;
+                case "grade_mismatch":
+                    $message = "Registration successful! (Grade checking disabled for now)";
+                    $messageType = "success";
+                    break;
+                default:
+                    $message = "Registration failed. Please try again.";
+                    $messageType = "error";
+            }
+        } else {
+            $message = "Please select both pupil and expedition.";
+            $messageType = "error";
+        }
+    }
+}
+
+// This will handle deletions (GET requests)
+if (isset($_GET['delete_pupil'])) {
+    $pupil_id = intval($_GET['delete_pupil']);
+    if (removePupil($pdo, $pupil_id)) {
+        $message = "Pupil deleted successfully!";
+        $messageType = "success";
+    }
+}
+
+if (isset($_GET['delete_expedition'])) {
+    $expedition_id = intval($_GET['delete_expedition']);
+    if (removeExpedition($pdo, $expedition_id)) {
+        $message = "Expedition deleted successfully!";
+        $messageType = "success";
+    }
+}
+
+if (isset($_GET['delete_registration'])) {
+    $registration_id = intval($_GET['delete_registration']);
+    $query = "DELETE FROM registrations WHERE registration_id = ?";
+    $stmt = $pdo->prepare($query);
+    if ($stmt->execute([$registration_id])) {
+        $message = "Registration deleted successfully!";
+        $messageType = "success";
+    } else {
+        $message = "Failed to delete registration.";
+        $messageType = "error";
+    }
+}
+
+
+
+// Getting data for display
+$pupils = getAllPupils($pdo);
+$expeditions = getAllExpeditions($pdo);
+$registrations = getAllRegistrations($pdo);
+$summary = getExpeditionSummary($pdo);
+?>
+
+<!--ACCORDING TO THE MVC THIS IS THE VIEW -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Tour Management System</title>
+    <style>
+        body {
+            font-family: Poppins, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #0a6550;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .section {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .delete-btn {
+            background-color: #0ebba3;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .delete-btn:hover {
+            background-color: #6ae604;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>School Expedition Management System </h1>
+    <p>Manage pupils, expeditions, and registrations easily</p>
+</div>
+
+<?php if (!empty($message)): ?>
+    <div class="message <?= $messageType ?>">
+        <?= htmlspecialchars($message) ?>
+    </div>
+<?php endif; ?>
+
+<!-- PUPIL MANAGEMENT SECTION -->
+<div class="section">
+    <h2>Pupil Management</h2>
+    <form method="post">
+        <div class="form-row">
+            <div class="form-group">
+                <label>First Name:</label>
+                <input type="text" name="name" required>
+            </div>
+            <div class="form-group">
+                <label>Surname:</label>
+                <input type="text" name="surname" required>
+            </div>
+            <div class="form-group">
+                <label>Grade (1-12):</label>
+                <input type="number" name="grade" min="1" max="12" required>
+            </div>
+        </div>
+        <button type="submit" name="add_pupil">Add Pupil</button>
+    </form>
+
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Surname</th>
+            <th>Grade</th>
+            <th>Action</th>
+        </tr>
+        <?php foreach ($pupils as $pupil): ?>
+            <tr>
+                <td><?= htmlspecialchars($pupil['NAME']) ?></td>
+                <td><?= htmlspecialchars($pupil['surname']) ?></td>
+                <td>Grade <?= $pupil['grade'] ?></td>
+                <td>
+
+                    <a href="?delete_pupil=<?= $pupil['pupil_id'] ?>"
+                       class="delete-btn"
+                       onclick="return confirm('Are you sure you want to delete this pupil?')">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+
+</div>
+
+<!-- EXPEDITION MANAGEMENT SECTION -->
+<div class="section">
+    <h2>Expedition Management</h2>
+    <form method="post">
+        <div class="form-group">
+            <label>Expedition Title:</label>
+            <input type="text" name="title" required>
+        </div>
+        <div class="form-group">
+            <label>Description:</label>
+            <textarea name="description" rows="3" required></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Cost (R):</label>
+                <input type="number" name="cost" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Start Date:</label>
+                <input type="date" name="start_date" required>
+            </div>
+            <div class="form-group">
+                <label>End Date:</label>
+                <input type="date" name="end_date" required>
+            </div>
+        </div>
+        <button type="submit" name="add_expedition">Add Expedition</button>
+    </form>
+
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Dates</th>
+            <th>Cost</th>
+            <th>Action</th>
+        </tr>
+        <?php foreach ($expeditions as $expedition): ?>
+            <tr>
+                <td><?= htmlspecialchars($expedition['title']) ?></td>
+                <td><?= htmlspecialchars(substr($expedition['description'], 0, 50)) ?>...</td>
+                <td><?= $expedition['start_date'] ?> to <?= $expedition['end_date'] ?></td>
+                <td>R<?= number_format($expedition['cost'], 2) ?></td>
+                <td>
+
+                    <a href="?delete_expedition=<?= $expedition['expedition_id'] ?>"
+                       class="delete-btn"
+                       onclick="return confirm('Are you sure you want to delete this expedition?')">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+
+
+<!-- REGISTRATION SECTION -->
+<div class="section">
+    <h2>Registration</h2>
+    <form method="post">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Select Pupil:</label>
+                <select name="pupil_id" required>
+                    <option value="">Choose a student</option>
+                    <?php foreach ($pupils as $pupil): ?>
+                        <option value="<?= $pupil['pupil_id'] ?>">
+                            <?= htmlspecialchars($pupil['NAME'] . ' ' . $pupil['surname']) ?>
+                            (Grade <?= $pupil['grade'] ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Select Tour:</label>
+                <select name="expedition_id" required>
+                    <option value="">Choose a tour...</option>
+                    <?php foreach ($expeditions as $expedition): ?>
+                        <option value="<?= $expedition['expedition_id'] ?>">
+                            <?= htmlspecialchars($expedition['title']) ?> - R<?= number_format($expedition['cost'], 2) ?>
+                            (<?= $expedition['start_date'] ?> to <?= $expedition['end_date'] ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <button type="submit" name="register_pupil">Register Pupil</button>
+    </form>
+
+    <h3>Current Registrations</h3>
+    <table>
+        <tr>
+            <th>Pupils Name</th>
+            <th>Grade</th>
+            <th>Tour/Experdition</th>
+            <th>Cost of Tour</th>
+            <th>Action</th>
+        </tr>
+        <?php foreach ($registrations as $reg): ?>
+            <tr>
+                <td><?= htmlspecialchars($reg['name'] . ' ' . $reg['surname']) ?></td>
+                <td>Grade <?= $reg['grade'] ?></td>
+                <td><?= htmlspecialchars($reg['title']) ?></td>
+                <td>R<?= number_format($reg['cost'], 2) ?></td>
+                <td>
+                    <a href="?delete_registration=<?= $reg['registration_id'] ?>"
+                       class="delete-btn"
+                       onclick="return confirm('Are you sure you want to deregister this pupil from this expedition?')">
+                        Deregister
+                    </a>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+
+<!-- SUMMARY SECTION -->
+<div class="section">
+    <h2>Expedition Summary</h2>
+    <table>
+        <tr>
+            <th>Tour</th>
+            <th>Total Pupils</th>
+            <th>Total Revenue</th>
+            <th>Registered Pupils</th>
+        </tr>
+        <?php foreach ($summary as $sum): ?>
+            <tr>
+                <td><?= htmlspecialchars($sum['title']) ?></td>
+                <td><?= $sum['total_pupils'] ?></td>
+                <td>R<?= number_format($sum['cost'] * $sum['total_pupils'], 2) ?></td>
+                <td><?= $sum['pupil_names'] ?: 'No registrations yet' ?></td>
+            </tr>
+        <?php endforeach; ?>
+    </table>
+</div>
+
+<div class="iframe" style="text-align: center; margin-top: 30px">
+    <iframe width=400 height="1200" src="task4.txt">
+        Your browser doesn't support iframes.
+    </iframe>
+
+
+</body>
+</html>

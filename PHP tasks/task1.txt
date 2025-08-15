@@ -1,0 +1,51 @@
+<?php
+
+//TO complete the submission process
+
+    if ($_SERVER["REQUEST_METHOD"] == "GET" && !empty($_GET)) {
+        $shop = $_GET["shop"];
+        $name = $_GET["name"];
+        $email = $_GET["email"];
+        $rating = $_GET["rating"];
+        $comments = $_GET["comments"];
+
+        $inputAlerts = [];
+
+        if (trim($shop)  === "") {
+            $inputAlerts[] = "Please select a shop.";
+        }
+
+        if ($name == "" ) {
+            $inputAlerts[] = "Please enter your name.";
+
+        }
+
+        if ($email == "" ) {
+            $inputAlerts[] = "Please enter your email address.";
+        }
+
+        if ($rating == "" ) {
+            $inputAlerts[] = "Please select a rating.";
+        }
+
+        if (!empty($inputAlerts)) {
+            echo "<p style='color:red;'><strong>Incomplete form:</strong><br>".implode("<br>", $inputAlerts)."</p>";
+        }else {
+            echo "<h3>Feedback Summary: </h3>";
+            echo "<p><strong>Shop: </strong>$shop</p>";
+            echo "<p><strong>Name: </strong>$name</p>";
+            echo "<p><strong>Email: </strong>$email</p>";
+            echo "<p><strong>Rating: </strong>$rating</p>";
+
+            if ($comments !== "") {
+                echo "<p><strong>Comments: </strong>. htmlspecialchars($comments) .</p>";
+
+            }else {
+                echo "<p><strong>Comments: </strong>No comment provided.</p>";
+            }
+
+        }
+
+    }
+
+    ?>
