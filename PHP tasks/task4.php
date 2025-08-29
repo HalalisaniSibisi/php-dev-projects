@@ -3,10 +3,10 @@
 include "menu.inc";
 
 // This is how to connect to our live Database, these are my connection settings located here
-$host = "sql108.infinityfree.com";
-$username = "if0_39681730";
-$password = "WTpTwWWunuI2eKW";
-$database = "if0_39681730_24988987_sibisi_db";
+$host = "*************";
+$username = "***********";
+$password = "***********";
+$database = "***************";
 
 // Connecting to database using PDO
 try {
@@ -17,7 +17,7 @@ try {
 }
 
 // According to the chapters, we must create CRUD functions for our system
-// Get all pupils from database
+// Get all pupils from the database
 function getAllPupils($pdo) {
     $query = "SELECT * FROM pupils ORDER BY surname, name";
     $stmt = $pdo->query($query);
@@ -564,4 +564,5 @@ $summary = getExpeditionSummary($pdo);
 
 
 </body>
+
 </html>
